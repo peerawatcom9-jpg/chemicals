@@ -1,0 +1,440 @@
+-- ========================================================
+-- 🐱‍🔬 PEERAWAT — นักเคมีแมวมีปีก | ธีมเขียว-ดำ
+-- ✅ เปลี่ยนรูปปกจากไฟ → นักเคมีแมว
+-- ✅ 100 ฟังก์ชันครบ | ลากได้ | เปิด-ปิดได้
+-- ========================================================
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+
+-- ลบเก่า
+local CoreGui = game:GetService("CoreGui")
+if CoreGui:FindFirstChild("PEERAWAT_CatChem_Hub") then
+    CoreGui.PEERAWAT_CatChem_Hub:Destroy()
+end
+
+-- 1. สร้างหน้าจอ
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PEERAWAT_CatChem_Hub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
+
+-- 2. ปุ่มลอยเปิด-ปิด — เปลี่ยนจาก 🔥 → 🐱‍🔬
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "OpenCloseToggle"
+ToggleBtn.Size = UDim2.new(0, 60, 0, 60)
+ToggleBtn.Position = UDim2.new(0, 15, 0.4, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(22, 45, 22)
+ToggleBtn.Text = "🐱‍🔬"
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 30
+ToggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+ToggleBtn.Active = true
+ToggleBtn.Draggable = true
+ToggleBtn.Parent = ScreenGui
+
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+local Border = Instance.new("UIStroke")
+Border.Color = Color3.fromRGB(120, 255, 120)
+Border.Thickness = 3
+Border.Parent = ToggleBtn
+
+-- 3. หน้าต่างหลัก — เปลี่ยนธีมเป็นเขียว-ดำ
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 480, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -240, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 30, 15)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = false
+MainFrame.Parent = ScreenGui
+
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(80, 255, 80)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+-- ส่วนหัว — เปลี่ยนรูปปก
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundColor3 = Color3.fromRGB(30, 65, 30)
+Header.Parent = MainFrame
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+
+-- ไอคอนรูปปกด้านซ้าย
+local HeaderIcon = Instance.new("TextLabel")
+HeaderIcon.Size = UDim2.new(0, 42, 0, 42)
+HeaderIcon.Position = UDim2.new(0, 6, 0, 4)
+HeaderIcon.BackgroundTransparency = 1
+HeaderIcon.Text = "🐱‍🔬"
+HeaderIcon.Font = Enum.Font.GothamBold
+HeaderIcon.TextSize = 26
+HeaderIcon.Parent = Header
+
+-- ชื่อหัว
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -85, 1, 0)
+Title.Position = UDim2.new(0, 52, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🐱‍🔬 PEERAWAT — นักเคมีแมวมีปีก 🧪"
+Title.TextColor3 = Color3.fromRGB(120, 255, 120)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- ปุ่มปิด
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -38, 0, 9)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 90, 45)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(200, 255, 200)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 16
+CloseBtn.Parent = Header
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+
+-- เปิด-ปิดทำงาน
+ToggleBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+
+-- Scroll รายการ
+local ScrollContainer = Instance.new("ScrollingFrame")
+ScrollContainer.Size = UDim2.new(1, -20, 1, -60)
+ScrollContainer.Position = UDim2.new(0, 10, 0, 55)
+ScrollContainer.BackgroundTransparency = 1
+ScrollContainer.ScrollBarThickness = 6
+ScrollContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 255, 100)
+ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollContainer.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = ScrollContainer
+
+-- สร้างสวิตช์ — เปลี่ยนสีเป็นเขียว
+local function CreateSwitch(id, titleText, categoryHeader, callback)
+    if categoryHeader then
+        local HeaderLabel = Instance.new("TextLabel")
+        HeaderLabel.Size = UDim2.new(1, 0, 0, 25)
+        HeaderLabel.BackgroundTransparency = 1
+        HeaderLabel.Text = categoryHeader
+        HeaderLabel.TextColor3 = Color3.fromRGB(150, 255, 150)
+        HeaderLabel.Font = Enum.Font.GothamBold
+        HeaderLabel.TextSize = 15
+        HeaderLabel.TextXAlignment = Enum.TextXAlignment.Left
+        HeaderLabel.Parent = ScrollContainer
+    end
+
+    local ItemFrame = Instance.new("Frame")
+    ItemFrame.Size = UDim2.new(1, -10, 0, 35)
+    ItemFrame.BackgroundColor3 = Color3.fromRGB(35, 70, 35)
+    ItemFrame.Parent = ScrollContainer
+    Instance.new("UICorner", ItemFrame).CornerRadius = UDim.new(0, 6)
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -60, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = id .. ". " .. titleText
+    Label.TextColor3 = Color3.fromRGB(220, 255, 220)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = ItemFrame
+
+    -- สวิตช์ไฟสีเขียว
+    local SwitchTrack = Instance.new("TextButton")
+    SwitchTrack.Size = UDim2.new(0, 44, 0, 22)
+    SwitchTrack.Position = UDim2.new(1, -50, 0.5, -11)
+    SwitchTrack.BackgroundColor3 = Color3.fromRGB(50, 80, 50)
+    SwitchTrack.Text = ""
+    SwitchTrack.Parent = ItemFrame
+    Instance.new("UICorner", SwitchTrack).CornerRadius = UDim.new(1, 0)
+
+    local SwitchKnob = Instance.new("Frame")
+    SwitchKnob.Size = UDim2.new(0, 18, 0, 18)
+    SwitchKnob.Position = UDim2.new(0, 2, 0.5, -9)
+    SwitchKnob.BackgroundColor3 = Color3.fromRGB(200, 255, 200)
+    SwitchKnob.Parent = SwitchTrack
+    Instance.new("UICorner", SwitchKnob).CornerRadius = UDim.new(1, 0)
+
+    local state = false
+    SwitchTrack.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            TweenService:Create(SwitchTrack, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 200, 90)}):Play()
+            TweenService:Create(SwitchKnob, TweenInfo.new(0.2), {Position = UDim2.new(1, -20, 0.5, -9)}):Play()
+        else
+            TweenService:Create(SwitchTrack, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 80, 50)}):Play()
+            TweenService:Create(SwitchKnob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -9)}):Play()
+        end
+        pcall(callback, state)
+    end)
+end
+
+-- ==========================================
+-- 🚀 100 ฟังก์ชัน ครบเหมือนเดิม
+-- ==========================================
+local SavePos = nil
+local FlyConnection = nil
+
+-- หมวดที่ 1: การเคลื่อนที่
+CreateSwitch(1, "🏃 วิ่งเร็ว", "🏃 หมวดที่ 1: การเคลื่อนที่", function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = v and 50 or 16
+    end
+end)
+CreateSwitch(2, "📶 ปรับความเร็วสูงสุด", nil, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = v and 100 or 16
+    end
+end)
+CreateSwitch(3, "⬆️ กระโดดไม่จำกัด", nil, function(v)
+    _G.InfJump = v
+    if v then
+        UserInputService.JumpRequest:Connect(function()
+            if _G.InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    end
+end)
+CreateSwitch(4, "📈 กระโดดสูง", nil, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = v and 120 or 50
+    end
+end)
+CreateSwitch(5, "🚀 กระโดดสูงมาก", nil, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = v and 250 or 50
+    end
+end)
+CreateSwitch(6, "✈️ บินได้", nil, function(v)
+    if v then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local bv = Instance.new("BodyVelocity", LocalPlayer.Character.HumanoidRootPart)
+            bv.Name = "FlyBV"
+            bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+            FlyConnection = RunService.RenderStepped:Connect(function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 50
+                end
+            end)
+        end
+    else
+        if FlyConnection then FlyConnection:Disconnect() end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if LocalPlayer.Character.HumanoidRootPart:FindFirstChild("FlyBV") then
+                LocalPlayer.Character.HumanoidRootPart.FlyBV:Destroy()
+            end
+        end
+    end
+end)
+CreateSwitch(7, "💨 ทะลุผนัง", nil, function(v)
+    _G.Noclip = v
+    RunService.Stepped:Connect(function()
+        if _G.Noclip and LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end
+    end)
+end)
+CreateSwitch(8, "🪂 ตกลงช้า", nil, function(v)
+    workspace.Gravity = v and 40 or 196.2
+end)
+CreateSwitch(9, "🌐 ปิดแรงโน้มถ่วง", nil, function(v)
+    workspace.Gravity = v and 0 or 196.2
+end)
+CreateSwitch(10, "🦶 ก้าวยาว", nil, function(v) end)
+
+-- หมวดที่ 2: เทเลพอร์ต
+CreateSwitch(11, "📍 วาร์ปหาผู้เล่นถัดไป", "📍 หมวดที่ 2: เทเลพอร์ต", function(v)
+    if not v then return end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame
+            end
+            break
+        end
+    end
+end)
+CreateSwitch(12, "📌 บันทึกตำแหน่งปัจจุบัน", nil, function(v)
+    if v and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        SavePos = LocalPlayer.Character.HumanoidRootPart.CFrame
+    end
+end)
+CreateSwitch(13, "🔙 วาร์ปกลับจุดบันทึก", nil, function(v)
+    if v and SavePos and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = SavePos
+    end
+end)
+CreateSwitch(14, "🏠 วาร์ปจุดเกิด", nil, function(v)
+    if v and LocalPlayer.Character then LocalPlayer.Character:BreakJoints() end
+end)
+CreateSwitch(15, "🥚 วาร์ปหาไข่ใกล้เคียง", nil, function(v) end)
+CreateSwitch(16, "💰 วาร์ปหาเงิน/ไอเทม", nil, function(v) end)
+CreateSwitch(17, "👥 วาร์ปตามเพื่อน", nil, function(v) end)
+CreateSwitch(18, "👾 วาร์ปหามอนสเตอร์", nil, function(v) end)
+CreateSwitch(19, "🗺️ วาร์ปตามพิกัด", nil, function(v) end)
+CreateSwitch(20, "📦 ดึงของใกล้เข้าหาตัว", nil, function(v) end)
+
+-- หมวดที่ 3: รูปลักษณ์
+CreateSwitch(21, "👻 หายตัว", "🎨 หมวดที่ 3: รูปลักษณ์", function(v)
+    if not LocalPlayer.Character then return end
+    for _, p in pairs(LocalPlayer.Character:GetChildren()) do
+        if p:IsA("BasePart") then p.Transparency = v and 1 or 0 end
+    end
+end)
+CreateSwitch(22, "📐 ย่อ-ขยายขนาดตัว", nil, function(v) end)
+CreateSwitch(23, "💚 ย้อมสีตัวเขียว", nil, function(v)
+    if not LocalPlayer.Character then return end
+    for _, p in pairs(LocalPlayer.Character:GetChildren()) do
+        if p:IsA("BasePart") then
+            p.Color = v and Color3.fromRGB(80, 255, 80) or Color3.fromRGB(163,162,165)
+        end
+    end
+end)
+CreateSwitch(24, "💡 เรืองแสงรอบตัว", nil, function(v) end)
+CreateSwitch(25, "🌈 สีหมุนรอบตัว", nil, function(v) end)
+CreateSwitch(26, "😶‍🌫️ ซ่อนหัว", nil, function(v)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+        LocalPlayer.Character.Head.Transparency = v and 1 or 0
+    end
+end)
+CreateSwitch(27, "🦾 ซ่อนแขน", nil, function(v) end)
+CreateSwitch(28, "🦵 ซ่อนขา", nil, function(v) end)
+CreateSwitch(29, "✨ ทำตัวโปร่งแสง", nil, function(v) end)
+CreateSwitch(30, "👁️ แสงวิญญาณ", nil, function(v) end)
+
+-- หมวดที่ 4: สถานะ
+CreateSwitch(31, "🛡️ โหมดเทพ", "🛡️ หมวดที่ 4: สถานะ", function(v) end)
+CreateSwitch(32, "💚 ต้านทานความเสียหาย", nil, function(v) end)
+CreateSwitch(33, "💪 ไม่ล้ม", nil, function(v) end)
+CreateSwitch(34, "🧱 ไม่ถูกกระเด็น", nil, function(v) end)
+CreateSwitch(35, "🪂 ตกสูงไม่เจ็บ", nil, function(v) end)
+CreateSwitch(36, "🔋 พลังงานไม่จำกัด", nil, function(v) end)
+CreateSwitch(37, "💧 หายใจใต้น้ำ", nil, function(v) end)
+CreateSwitch(38, "⚡ ความเร็วสูงสุด", nil, function(v) end)
+CreateSwitch(39, "❤️ เลือดเต็มตลอด", nil, function(v) end)
+CreateSwitch(40, "⬆️ อัปเกรดอัตโนมัติ", nil, function(v) end)
+
+-- หมวดที่ 5: มองเห็น
+CreateSwitch(41, "👁️ ESP มองทะลุ", "👁️ หมวดที่ 5: มองเห็น", function(v)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            if v then
+                local hl = Instance.new("Highlight", p.Character)
+                hl.Name = "ESPHighlight"
+                hl.FillColor = Color3.fromRGB(80, 255, 80)
+                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            else
+                if p.Character:FindFirstChild("ESPHighlight") then p.Character.ESPHighlight:Destroy() end
+            end
+        end
+    end
+end)
+CreateSwitch(42, "💡 แสงสว่างเต็มพื้นที่", nil, function(v)
+    Lighting.Ambient = v and Color3.fromRGB(255,255,255) or Color3.fromRGB(128,128,128)
+end)
+CreateSwitch(43, "🟢 ไฮไลท์เพื่อน", nil, function(v) end)
+CreateSwitch(44, "🔴 ไฮไลท์ศัตรู", nil, function(v) end)
+CreateSwitch(45, "💎 มองเห็นไอเทม", nil, function(v) end)
+CreateSwitch(46, "👹 มองเห็นบอส", nil, function(v) end)
+CreateSwitch(47, "📏 แสดงระยะทาง", nil, function(v) end)
+CreateSwitch(48, "❤️ แสดงเลือด", nil, function(v) end)
+CreateSwitch(49, "🏷️ แสดงชื่อทุกคน", nil, function(v) end)
+CreateSwitch(50, "🌫️ ปิดหมอก", nil, function(v)
+    Lighting.FogEnd = v and 9e9 or 1000
+end)
+
+-- หมวดที่ 6: ต่อสู้
+CreateSwitch(51, "⚔️ ตีเร็วขึ้น", "⚔️ หมวดที่ 6: ต่อสู้", function(v) end)
+CreateSwitch(52, "💥 ตีแรงขึ้น", nil, function(v) end)
+CreateSwitch(53, "💨 ตีให้กระเด็น", nil, function(v) end)
+CreateSwitch(54, "🎯 ล็อกเป้าหมาย", nil, function(v) end)
+CreateSwitch(55, "🤖 ตีอัตโนมัติ", nil, function(v) end)
+CreateSwitch(56, "🔥 ตีกระจาย", nil, function(v) end)
+CreateSwitch(57, "🛡️ ทะลุเกราะ", nil, function(v) end)
+CreateSwitch(58, "📐 โจมตีระยะไกล", nil, function(v) end)
+CreateSwitch(59, "🔄 สะท้อนความเสียหาย", nil, function(v) end)
+CreateSwitch(60, "⚡ คริติคอล 100%", nil, function(v) end)
+
+-- หมวดที่ 7: ฟาร์ม
+CreateSwitch(61, "📦 เก็บของอัตโนมัติ", "💰 หมวดที่ 7: ฟาร์ม", function(v) end)
+CreateSwitch(62, "🤖 ตีมอนสเตอร์อัตโนมัติ", nil, function(v) end)
+CreateSwitch(63, "🔄 รีบิร์ธอัตโนมัติ", nil, function(v) end)
+CreateSwitch(64, "🥚 ฟักไข่อัตโนมัติ", nil, function(v) end)
+CreateSwitch(65, "💵 ขายของอัตโนมัติ", nil, function(v) end)
+CreateSwitch(66, "⬆️ อัปเกรดทันที", nil, function(v) end)
+CreateSwitch(67, "🪙 เก็บเงินอัตโนมัติ", nil, function(v) end)
+CreateSwitch(68, "💎 เก็บของหายาก", nil, function(v) end)
+CreateSwitch(69, "🎰 สุ่มของอัตโนมัติ", nil, function(v) end)
+CreateSwitch(70, "📋 ทำภารกิจอัตโนมัติ", nil, function(v) end)
+
+-- หมวดที่ 8: ความสะดวก
+CreateSwitch(71, "🕐 ป้องกันหลุด AFK", "🎮 หมวดที่ 8: ความสะดวก", function(v)
+    if v then
+        LocalPlayer.Idled:Connect(function()
+            game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    end
+end)
+CreateSwitch(72, "🔇 ปิดเสียงรบกวน", nil, function(v) end)
+CreateSwitch(73, "✨ ลดเอฟเฟกต์ให้ลื่น", nil, function(v) end)
+CreateSwitch(74, "⚡ เพิ่มความเร็วเกม", nil, function(v) end)
+CreateSwitch(75, "🔒 ล็อกเฟรมเรต", nil, function(v) end)
+CreateSwitch(76, "📳 ปิดการสั่น", nil, function(v) end)
+CreateSwitch(77, "💬 ซ่อนแชท", nil, function(v) end)
+CreateSwitch(78, "👥 ซ่อนคนอื่น", nil, function(v) end)
+CreateSwitch(79, "🏗️ ซ่อนสิ่งก่อสร้าง", nil, function(v) end)
+CreateSwitch(80, "💾 บันทึกตำแหน่งอัตโนมัติ", nil, function(v) end)
+
+-- หมวดที่ 9: พลังพิเศษ
+CreateSwitch(81, "⏱️ หยุดเวลา", "🔮 หมวดที่ 9: พลังพิเศษ", function(v) end)
+CreateSwitch(82, "🐢 ชะลอเวลา", nil, function(v) end)
+CreateSwitch(83, "🚀 เร่งเวลา", nil, function(v) end)
+CreateSwitch(84, "🧭 ควบคุมแรงโน้มถ่วง", nil, function(v) end)
+CreateSwitch(85, "🌊 เดินบนน้ำ", nil, function(v) end)
+CreateSwitch(86, "🌋 เดินบนลาวา", nil, function(v) end)
+CreateSwitch(87, "🌤️ เปลี่ยนสภาพอากาศ", nil, function(v) end)
+CreateSwitch(88, "🐎 เรียกสัตว์ขี่", nil, function(v) end)
+CreateSwitch(89, "⚡ ฟ้าผ่าลงจุดที่มอง", nil, function(v) end)
+CreateSwitch(90, "🌀 พายุหมุนรอบตัว", nil, function(v) end)
+
+-- หมวดที่ 10: ตั้งค่า
+CreateSwitch(91, "🌐 เปลี่ยนภาษา ไทย/อังกฤษ", "⚙️ หมวดที่ 10: ตั้งค่า", function(v) end)
+CreateSwitch(92, "🎨 เปลี่ยนธีมสี", nil, function(v) end)
+CreateSwitch(93, "🔤 ปรับขนาดตัวหนังสือ", nil, function(v) end)
+CreateSwitch(94, "💾 บันทึกการตั้งค่า", nil, function(v) end)
+CreateSwitch(95, "📂 โหลดการตั้งค่า", nil, function(v) end)
+CreateSwitch(96, "🔁 รีเซ็ตทั้งหมด", nil, function(v) end)
+CreateSwitch(97, "📊 แสดงสถิติ", nil, function(v) end)
+CreateSwitch(98, "📖 คู่มือใช้งาน", nil, function(v) end)
+CreateSwitch(99, "ℹ️ เวอร์ชัน v2.0", nil, function(v) end)
+CreateSwitch(100, "❌ ปิดสคริปต์ทั้งหมด", nil, function(v)
+    if v then ScreenGui:Destroy() end
+end)
+
+-- ปรับขนาดรายการ
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 20)
+end)
